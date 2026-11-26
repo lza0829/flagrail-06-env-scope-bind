@@ -9,21 +9,29 @@ def 此刻() -> str:
 
 
 def 写桶(体: dict) -> dict:
+    桶键 = 体["桶键"]
+    域 = (体.get("域") or "prod").strip()
+    if not 域:
+        from fastapi import HTTPException
+
+        raise HTTPException(400, f"桶域不可为空:{桶键}")
     conn = 连接()
     try:
-        桶键 = 体["桶键"]
         规则 = 体.get("规则", {})
         if isinstance(规则, dict):
             规则 = json.dumps(规则, ensure_ascii=False)
         conn.execute(
-            """INSERT INTO 分桶规(桶键, 开关键, 桶类型, 规则, 状态, 更新时)
-               VALUES (?,?,?,?,?,?)
+            """INSERT INTO 分桶规(桶键, 开关键, 桶类型, 规则, 域, 状态, 更新时)
+               VALUES (?,?,?,?,?,?,?)
                ON CONFLICT(桶键) DO UPDATE SET
                  开关键=excluded.开关键, 桶类型=excluded.桶类型, 规则=excluded.规则,
-                 状态=excluded.状态, 更新时=excluded.更新时""",
-            (桶键, 体["开关键"], 体.get("桶类型", "百分比"), 规则, 体.get("状态", "生效"), 此刻()),
+                 域=excluded.域, 状态=excluded.状态, 更新时=excluded.更新时""",
+            (
+                桶键, 体["开关键"], 体.get("桶类型", "百分比"), 规则, 域,
+                体.get("状态", "生效"), 此刻(),
+            ),
         )
         conn.commit()
-        return {"桶键": 桶键, "状态": "生效"}
+        return {"桶键": 桶键, "域": 域, "状态": 体.get("状态", "生效")}
     finally:
         conn.close()

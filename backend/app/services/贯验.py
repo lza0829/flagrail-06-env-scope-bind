@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from app.db import 连接
+from app.services import 环境域
 
 
 def 此刻() -> str:
@@ -17,18 +18,40 @@ def 跑贯验() -> dict:
 
         问题 = []
         # 已下发票必须有版本
-        for r in conn.execute("SELECT 票号, 版本键 FROM 下发票 WHERE 状态='已下发'"):
+        for r in conn.execute("SELECT 票号, 版本键, 桶键, 票域, 桶域, 跨域标记, 授权号 FROM 下发票 WHERE 状态='已下发'"):
             if not conn.execute(
                 "SELECT 1 FROM 开关版本 WHERE 版本键=?", (r["版本键"],)
             ).fetchone():
                 问题.append(f"悬空下发:{r['票号']}")
+            # 新增：域绑定三链一致
+            桶 = conn.execute("SELECT 域 FROM 分桶规 WHERE 桶键=?", (r["桶键"],)).fetchone()
+            if not 桶:
+                问题.append(f"下发桶缺失:{r['票号']}")
+            elif (桶["域"] or "prod") != (r["桶域"] or "prod"):
+                问题.append(f"桶域漂移:{r['票号']}")
+            跨域 = (r["票域"] or "prod") != (r["桶域"] or "prod")
+            if 跨域:
+                if not int(r["跨域标记"] or 0):
+                    问题.append(f"跨域票缺标记:{r['票号']}")
+                if not (r["授权号"] or ""):
+                    问题.append(f"跨域票缺授权号:{r['票号']}")
+                行 = conn.execute(
+                    "SELECT * FROM 跨域授权 WHERE 授权号=?", (r["授权号"] or "",)
+                ).fetchone()
+                判 = 环境域.授权判定(行, 环境域.解析时(此刻()))
+                if not 判["有效"]:
+                    问题.append(f"跨域票授权失效:{r['票号']}:{判['理由']}")
         # 确认回读必须对应已下发/已回滚票
-        for r in conn.execute("SELECT 证号, 票号, 所见版本键, 结果 FROM 回读证 WHERE 结果='确认'"):
+        for r in conn.execute(
+            "SELECT 证号, 票号, 边缘键, 边缘域, 票域, 桶域, 所见版本键, 结果 FROM 回读证 WHERE 结果='确认'"
+        ):
             t = conn.execute("SELECT * FROM 下发票 WHERE 票号=?", (r["票号"],)).fetchone()
             if not t:
                 问题.append(f"悬空回读:{r['证号']}")
             elif t["版本键"] != r["所见版本键"] and t["状态"] == "已下发":
                 问题.append(f"回读版本拧花:{r['证号']}")
+            elif (r["边缘域"] or "prod") != (t["桶域"] or "prod"):
+                问题.append(f"回读边缘域拧花:{r['证号']}")
         # 已回滚票应有命运条
         for r in conn.execute("SELECT 票号 FROM 下发票 WHERE 状态='已回滚'"):
             if not conn.execute(

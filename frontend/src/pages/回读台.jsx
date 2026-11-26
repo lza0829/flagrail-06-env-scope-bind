@@ -17,9 +17,11 @@ export default function 回读台() {
       {讯 && <p className="讯">{讯}</p>}
       {!rows.length ? <div className="空态">尚无回读证</div> : (
         <table>
-          <thead><tr><th>证号</th><th>票号</th><th>边缘</th><th>所见版本</th><th>结果</th></tr></thead>
+          <thead><tr><th>证号</th><th>票号</th><th>边缘</th><th>边缘域 → 桶域</th><th>跨域</th><th>所见版本</th><th>结果</th></tr></thead>
           <tbody>{rows.map((r) => (
             <tr key={r.证号}><td>{r.证号}</td><td>{r.票号}</td><td>{r.边缘键}</td>
+            <td>{r.边缘域 || "prod"} → {r.桶域 || "prod"}</td>
+            <td><span className={"徽章 " + (r.跨域标记 ? "警" : "信")}>{r.跨域标记 ? "跨域" : "同域"}</span></td>
             <td>{r.所见版本键}</td>
             <td><span className={"徽章 " + (r.结果 === "确认" ? "通" : "败")}>{r.结果}</span></td></tr>
           ))}</tbody>

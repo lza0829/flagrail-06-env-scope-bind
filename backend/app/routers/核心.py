@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.db import 夹具目录, 连接
-from app.services import 入轨, 分桶, 下发, 回读, 命运, 贯验, 目录
+from app.services import 入轨, 分桶, 下发, 回读, 命运, 贯验, 目录, 环境域
 
 路由 = APIRouter(prefix="/api")
 
@@ -18,6 +18,7 @@ class 分桶请求(BaseModel):
     开关键: str
     桶类型: str = "百分比"
     规则: dict = Field(default_factory=dict)
+    域: str = "prod"
     状态: str = "生效"
 
 
@@ -25,6 +26,8 @@ class 下发请求(BaseModel):
     票号: str = ""
     版本键: str
     桶键: str
+    票域: str = "prod"
+    授权号: str = ""
     说明: str = ""
 
 
@@ -32,9 +35,25 @@ class 回读请求(BaseModel):
     证号: str = ""
     票号: str
     边缘键: str
+    边缘域: str = "prod"
     所见版本键: str = ""
     结果: str = "确认"
+    跨域标记: bool = False
     说明: str = ""
+
+
+class 授权请求(BaseModel):
+    授权号: str
+    开关键: str
+    票域: str
+    桶域: str
+    到期时: str
+    状态: str = "有效"
+    说明: str = ""
+
+
+class 口径请求(BaseModel):
+    跨域口径: str
 
 
 class 回滚请求(BaseModel):
@@ -136,6 +155,58 @@ def 列回读():
         conn.close()
 
 
+@路由.get("/跨域授权")
+def 列跨域授权():
+    return 环境域.列授权()
+
+
+@路由.post("/跨域授权")
+def 做跨域授权(体: 授权请求):
+    return 环境域.写授权(体.model_dump())
+
+
+@路由.get("/域裁")
+def 列域裁(票号: str = ""):
+    conn = 连接()
+    try:
+        if 票号:
+            rows = conn.execute(
+                "SELECT * FROM 域裁 WHERE 票号=? ORDER BY 编号 DESC LIMIT 100", (票号,)
+            )
+        else:
+            rows = conn.execute("SELECT * FROM 域裁 ORDER BY 编号 DESC LIMIT 100")
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+@路由.get("/核证")
+def 做核证(票号: str):
+    return 环境域.核证(票号)
+
+
+@路由.post("/核证")
+def 做核证体(体: dict):
+    票号 = (体.get("票号") or "").strip()
+    if not 票号:
+        raise HTTPException(400, "票号必填")
+    return 环境域.核证(票号)
+
+
+@路由.get("/跨域口径")
+def 取跨域口径():
+    conn = 连接()
+    try:
+        return {"跨域口径": 环境域.取口径(conn), "合法口径": sorted(环境域.合法口径)}
+    finally:
+        conn.close()
+
+
+@路由.post("/跨域口径")
+def 设跨域口径(体: 口径请求):
+    return 环境域.设口径(体.跨域口径)
+
+
 @路由.get("/命运账")
 def 列命运():
     conn = 连接()
@@ -217,6 +288,8 @@ def 装夹具(名: str = "入轨样例"):
         return 下发.装下发夹具(体)
     if 类型 == "回读":
         return 回读.装回读夹具(体)
+    if 类型 == "环域":
+        return 环境域.装夹具(体)
     if 类型 == "回滚":
         return 命运.回滚票(体)
     raise HTTPException(400, f"未知夹具类型:{类型}")

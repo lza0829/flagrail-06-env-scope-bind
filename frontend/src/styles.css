@@ -293,6 +293,28 @@ td code, .mono {
 .徽章.通 { background: var(--通底); color: var(--通) }
 .徽章.败 { background: var(--败底); color: var(--败) }
 .徽章.信 { background: var(--信底); color: var(--信) }
+.徽章.警 { background: var(--警底); color: var(--警) }
+.小题 {
+  font-family: Syne, "IBM Plex Sans", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 1.6rem 0 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--线弱);
+}
+input.查 {
+  border: 1px solid var(--线);
+  background: rgba(255,255,255,0.7);
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.85rem;
+  border-radius: 2px;
+  min-width: 18rem;
+  color: var(--墨);
+}
+input.查:focus { outline: 2px solid var(--信亮); outline-offset: 1px }
 
 @keyframes brand-in {
   from { opacity: 0; letter-spacing: 0.4em; transform: translateY(8px) }

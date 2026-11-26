@@ -17,9 +17,10 @@ export default function 分桶规() {
       {讯 && <p className="讯">{讯}</p>}
       {!rows.length ? <div className="空态">尚无分桶</div> : (
         <table>
-          <thead><tr><th>桶键</th><th>开关键</th><th>桶类型</th><th>规则</th><th>状态</th></tr></thead>
+          <thead><tr><th>桶键</th><th>开关键</th><th>桶类型</th><th>桶域</th><th>规则</th><th>状态</th></tr></thead>
           <tbody>{rows.map((r) => (
             <tr key={r.桶键}><td>{r.桶键}</td><td>{r.开关键}</td><td>{r.桶类型}</td>
+            <td><span className={"徽章 " + (r.域 === "prod" ? "信" : "警")}>{r.域 || "prod"}</span></td>
             <td><code>{typeof r.规则 === "string" ? r.规则 : JSON.stringify(r.规则)}</code></td>
             <td>{r.状态}</td></tr>
           ))}</tbody>

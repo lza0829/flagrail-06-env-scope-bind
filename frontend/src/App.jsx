@@ -8,11 +8,13 @@ import 回读台 from "./pages/回读台.jsx";
 import 命运账 from "./pages/命运账.jsx";
 import 轨贯验 from "./pages/轨贯验.jsx";
 import 站规 from "./pages/站规.jsx";
+import 环境域 from "./pages/环境域.jsx";
 
 const 主链 = [
   ["/", "轨台"],
   ["/开关轨", "开关轨"],
   ["/分桶规", "分桶规"],
+  ["/环境域", "环境域"],
   ["/下发票", "下发票"],
   ["/回读台", "回读台"],
   ["/命运账", "命运账"],
@@ -49,6 +51,7 @@ export default function App() {
             <Route path="/" element={<轨台 />} />
             <Route path="/开关轨" element={<开关轨 />} />
             <Route path="/分桶规" element={<分桶规 />} />
+            <Route path="/环境域" element={<环境域 />} />
             <Route path="/下发票" element={<下发票 />} />
             <Route path="/回读台" element={<回读台 />} />
             <Route path="/命运账" element={<命运账 />} />
